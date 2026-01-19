@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -44,9 +43,9 @@ SYSTEM_PROMPT = (
 agent = Agent(system_prompt=SYSTEM_PROMPT)
 
 # ---------------------------
-# OpenRouter Setup
+# OpenRouter Setup (HARDCODED KEY)
 # ---------------------------
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 headers = {
     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
