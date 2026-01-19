@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Study Planner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f7fb;
+      padding: 40px;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 20px;
+      width: 100%;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #4338ca;
+    }
+
+    .output {
+      margin-top: 25px;
+      padding: 15px;
+      border-radius: 8px;
+      background: #f1f5f9;
+      white-space: pre-wrap;
+    }
+
+    .loading {
+      text-align: center;
+      color: #555;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📚 AI Study Planner</h1>
+
+    <label>Subjects</label>
+    <input id="subjects" placeholder="Math, Physics, Chemistry" />
+
+    <label>Exam Date</label>
+    <input id="exam_date" placeholder="2026-03-15" />
+
+    <label>Hours per Day</label>
+    <input id="hours_per_day" type="number" placeholder="5" />
+
+    <label>Weak Topics</label>
+    <textarea id="weak_topics" placeholder="Integration, Thermodynamics"></textarea>
+
+    <button onclick="generatePlan()">Generate Study Plan</button>
+
+    <div id="loading" class="loading" style="display:none;">
+      Generating your study plan...
+    </div>
+
+    <div id="output" class="output" style="display:none;"></div>
+  </div>
+
+  <script>
+    async function generatePlan() {
+      const subjects = document.getElementById("subjects").value;
+      const exam_date = document.getElementById("exam_date").value;
+      const hours_per_day = document.getElementById("hours_per_day").value;
+      const weak_topics = document.getElementById("weak_topics").value;
+
+      document.getElementById("output").style.display = "none";
+      document.getElementById("loading").style.display = "block";
+
+      try {
+        // 🔥 FIX: use relative path via Colab proxy
+        const response = await fetch("/generate-plan", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            subjects,
+            exam_date,
+            hours_per_day: Number(hours_per_day),
+            weak_topics
+          })
+        });
+
+        const data = await response.json();
+
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("output").style.display = "block";
+        document.getElementById("output").innerText = data.plan || data.error;
+
+      } catch (err) {
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("output").style.display = "block";
+        document.getElementById("output").innerText = "❌ Failed to connect to backend.";
+      }
+    }
+  </script>
+</body>
+</html>
