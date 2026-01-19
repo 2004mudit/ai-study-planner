@@ -24,3 +24,13 @@ This is a full-stack generative AI application that creates a personalized daily
 ---
 
 Built for Potpie AI Round 1 Assessment.
+## How to run locally
+
+1. Clone the repository  
+2. Install dependencies  
+   pip install -r backend/requirements.txt  
+
+3. Run the backend  
+   uvicorn backend.app:app --reload  
+
+4. Open frontend/index.html in your browser
