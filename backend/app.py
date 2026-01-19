@@ -45,7 +45,7 @@ agent = Agent(system_prompt=SYSTEM_PROMPT)
 # ---------------------------
 # OpenRouter Setup (HARDCODED KEY)
 # ---------------------------
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 headers = {
     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
