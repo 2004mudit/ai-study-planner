@@ -3,3 +3,8 @@ fastapi
 uvicorn
 requests
 pydantic-ai
+python-dotenv
+httpx
+groq
+
+
