@@ -1,9 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from pydantic_ai import Agent
-import requests
+from dotenv import load_dotenv
+from groq import Groq
+import os
 import traceback
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = FastAPI()
 
@@ -12,7 +16,7 @@ app = FastAPI()
 # ---------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # allow all for now (safe for demo)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,52 +35,41 @@ class StudyInput(BaseModel):
 # System Prompt
 # ---------------------------
 SYSTEM_PROMPT = (
-    "You are an AI Study Planner. "
-    "Generate a clear, structured daily study plan. "
-    "Include revision slots. "
-    "Keep it concise and practical."
+    "You are an AI Study Planner. Generate a CONCISE, summarized study plan. "
+    "Format as: Key topics to study | Daily focus areas | Time allocation per subject | Weak topics focus | Revision strategy. "
+    "Use bullet points and keep it SHORT (max 10-15 lines total). "
+    "NO long daily breakdowns. Just actionable summary for efficient studying."
 )
 
 # ---------------------------
-# Pydantic-AI Agent
+# Groq Setup (Fast & FREE - No Credits Needed)
 # ---------------------------
-agent = Agent(system_prompt=SYSTEM_PROMPT)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# ---------------------------
-# OpenRouter Setup (HARDCODED KEY)
-# ---------------------------
-OPENROUTER_API_KEY = "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"
+if not GROQ_API_KEY:
+    raise ValueError("❌ GROQ_API_KEY not set in .env file!")
 
-headers = {
-    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-    "Content-Type": "application/json",
-    "HTTP-Referer": "https://srmist.edu.in",
-    "X-Title": "AI Study Planner"
-}
+client = Groq(api_key=GROQ_API_KEY)
 
-def call_openrouter(prompt: str) -> str:
-    payload = {
-        "model": "mistralai/mistral-7b-instruct",
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.4,
-        "max_tokens": 1000
-    }
-
-    response = requests.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers=headers,
-        json=payload,
-        timeout=60
-    )
-
-    if response.status_code != 200:
-        return f"Error: AI service failed ({response.status_code}) | {response.text}"
-
-    data = response.json()
-    return data["choices"][0]["message"]["content"]
+def call_groq(prompt: str) -> str:
+    """Call Groq API using official SDK"""
+    
+    try:
+        completion = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.4,
+            max_tokens=1000,
+            top_p=1,
+        )
+        
+        # SDK returns the message content here for non-stream calls
+        return completion.choices[0].message.content
+    except Exception as e:
+        return f"❌ API Error: {str(e)}"
 
 # ---------------------------
 # API Endpoint
@@ -90,17 +83,15 @@ Exam Date: {data.exam_date}
 Hours per day: {data.hours_per_day}
 Weak topics: {data.weak_topics}
 
-Create a daily study plan with revision slots.
+Create a detailed daily study plan with specific time slots and revision slots for each topic.
 """
-
-        ai_text = call_openrouter(prompt)
-
+        ai_text = call_groq(prompt)
         return {"plan": ai_text}
 
     except Exception as e:
         traceback.print_exc()
-        return {"error": str(e)}
+        return {"error": f"Failed to generate plan: {str(e)}"}
 
 @app.get("/")
 def root():
-    return {"message": "AI Study Planner API (CORS enabled) is running"}
+    return {"message": "✅ AI Study Planner API is running"}
