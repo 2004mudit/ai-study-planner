@@ -1,138 +1,777 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Study Planner</title>
   <style>
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
+      50% { box-shadow: 0 0 40px rgba(0, 212, 255, 0.6); }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background: #f6f7fb;
-      padding: 40px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      background: #0a0e1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    #starCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 20% 50%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 80%, rgba(0, 100, 255, 0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
     }
 
     .container {
-      max-width: 700px;
-      margin: auto;
-      background: #ffffff;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      max-width: 1400px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
     }
 
-    h1 {
+    header {
       text-align: center;
+      margin-bottom: 40px;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    header h1 {
+      font-size: 2.8em;
+      margin-bottom: 10px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #00d4ff, #0099ff, #00d4ff);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: slideIn 0.8s ease-out, gradientShift 6s ease infinite;
+      background: linear-gradient(135deg, #00d4ff 0%, #0099ff 50%, #6366f1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -1px;
+    }
+
+    header p {
+      font-size: 1.1em;
+      color: #a0a0b0;
+      font-weight: 300;
+      animation: fadeInUp 0.8s ease-out 0.3s both;
+      letter-spacing: 0.5px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      height: calc(100vh - 220px);
+    }
+
+    /* Output Panel - Single Box */
+    .output-grid {
+      background: linear-gradient(135deg, rgba(26, 26, 46, 0.8) 0%, rgba(22, 33, 62, 0.8) 100%);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(42, 42, 78, 0.5);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 30px rgba(0, 212, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      animation: fadeInUp 0.8s ease-out 0.4s both;
+      transition: all 0.4s ease;
+    }
+
+    .output-grid:hover {
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 40px rgba(0, 212, 255, 0.2);
+    }
+
+    .output-grid h2 {
+      font-size: 1.8em;
+      color: #ffffff;
+      margin-bottom: 30px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Left Panel - Input Form */
+    .input-panel {
+      background: linear-gradient(135deg, rgba(26, 26, 46, 0.8) 0%, rgba(22, 33, 62, 0.8) 100%);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(42, 42, 78, 0.5);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 30px rgba(0, 212, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      overflow-y: auto;
+      height: 100%;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+      transition: all 0.4s ease;
+    }
+
+    .input-panel:hover {
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 40px rgba(0, 212, 255, 0.2);
+    }
+
+    .input-panel h2 {
+      font-size: 1.5em;
+      color: #ffffff;
       margin-bottom: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
     }
 
     label {
-      font-weight: bold;
+      font-weight: 600;
       display: block;
+      margin-bottom: 6px;
+      color: #e0e0e0;
+      font-size: 0.85em;
+      letter-spacing: 0.3px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #2a2a4e;
+      border-radius: 10px;
+      font-size: 0.9em;
+      font-family: inherit;
+      background: rgba(15, 15, 30, 0.7);
+      backdrop-filter: blur(10px);
+      color: #e0e0e0;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      resize: vertical;
+    }
+
+    input[type="text"]::placeholder,
+    input[type="date"]::placeholder,
+    input[type="number"]::placeholder,
+    textarea::placeholder {
+      color: #606070;
+    }
+
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    input[type="number"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #00d4ff;
+      background: rgba(26, 26, 46, 0.9);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.4), inset 0 0 0 2px rgba(0, 212, 255, 0.1);
+      transform: translateY(-4px);
+      animation: glow 2s ease-in-out infinite;
+    }
+
+    textarea {
+      min-height: 70px;
+      font-size: 0.9em;
+      resize: none;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
       margin-top: 15px;
     }
 
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 6px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 14px;
+    button {
+      flex: 1;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+      color: #0f0f1e;
+      border: none;
+      border-radius: 12px;
+      font-size: 1em;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
     }
 
-    button {
-      margin-top: 20px;
-      padding: 12px 20px;
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
       width: 100%;
-      background: #4f46e5;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.2);
+      transition: left 0.5s ease;
     }
 
     button:hover {
-      background: #4338ca;
+      transform: translateY(-4px);
+      box-shadow: 0 15px 40px rgba(0, 212, 255, 0.5);
+      animation: glow 1.5s ease-in-out;
     }
 
-    .output {
-      margin-top: 25px;
-      padding: 15px;
-      border-radius: 8px;
-      background: #f1f5f9;
-      white-space: pre-wrap;
+    button:hover::before {
+      left: 100%;
+    }
+
+    button:active {
+      transform: translateY(-2px);
+    }
+
+    .clear-btn {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e0e0e0;
+      border: 1px solid #2a2a4e;
+      flex: 0.5;
+    }
+
+    .clear-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: none;
+      border-color: #00d4ff;
+    }
+
+    /* Right Panel - Output */
+    .output-panel {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border: 1px solid #2a2a4e;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .output-panel h2 {
+      font-size: 1.8em;
+      color: #ffffff;
+      margin-bottom: 30px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .output-content {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+
+    .output-content::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .output-content::-webkit-scrollbar-track {
+      background: #0f0f1e;
+      border-radius: 10px;
+    }
+
+    .output-content::-webkit-scrollbar-thumb {
+      background: #00d4ff;
+      border-radius: 10px;
+    }
+
+    .output-content::-webkit-scrollbar-thumb:hover {
+      background: #0099ff;
+    }
+
+    /* Output Content Box */
+    .output-content {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+
+    .output-content::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .output-content::-webkit-scrollbar-track {
+      background: #0f0f1e;
+      border-radius: 10px;
+    }
+
+    .output-content::-webkit-scrollbar-thumb {
+      background: #00d4ff;
+      border-radius: 10px;
+    }
+
+    .output-content::-webkit-scrollbar-thumb:hover {
+      background: #0099ff;
     }
 
     .loading {
       text-align: center;
-      color: #555;
-      margin-top: 15px;
+      color: #00d4ff;
+      font-size: 1.1em;
+      padding: 40px 20px;
+      animation: pulse 1.5s ease-in-out infinite;
+      font-weight: 600;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #606070;
+      padding: 60px 20px;
+      font-size: 1.1em;
+      font-weight: 300;
+    }
+
+    .empty-state svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+
+    .error {
+      background: rgba(255, 71, 87, 0.15);
+      border: 1.5px solid #ff4757;
+      color: #ff9ca5;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 20px;
+      font-weight: 500;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      header h1 {
+        font-size: 2em;
+      }
+
+      .input-panel,
+      .output-panel {
+        padding: 30px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      header h1 {
+        font-size: 1.5em;
+      }
+
+      .input-panel,
+      .output-panel {
+        padding: 20px;
+        border-radius: 15px;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
+
+      .clear-btn {
+        flex: 1;
+      }
     }
   </style>
 </head>
 <body>
+  <canvas id="starCanvas"></canvas>
   <div class="container">
-    <h1>📚 AI Study Planner</h1>
+    <header>
+      <h1>📚 AI Study Planner</h1>
+      <p>Create personalized study schedules powered by AI</p>
+    </header>
 
-    <label>Subjects</label>
-    <input id="subjects" placeholder="Math, Physics, Chemistry" />
+    <div class="main-grid">
+      <!-- Left Panel: Input Form -->
+      <div class="input-panel">
+        <div>
+          <h2>Study Details</h2>
 
-    <label>Exam Date</label>
-    <input id="exam_date" placeholder="2026-03-15" />
+          <div class="form-group">
+            <label for="subjects">📖 Subjects</label>
+            <input
+              id="subjects"
+              type="text"
+              placeholder="e.g., Math, Physics, Chemistry"
+            />
+          </div>
 
-    <label>Hours per Day</label>
-    <input id="hours_per_day" type="number" placeholder="5" />
+          <div class="form-row">
+            <div class="form-group">
+              <label for="exam_date">📅 Exam Date</label>
+              <input id="exam_date" type="date" />
+            </div>
+            <div class="form-group">
+              <label for="hours_per_day">⏱️ Hours per Day</label>
+              <input
+                id="hours_per_day"
+                type="number"
+                placeholder="5"
+                min="1"
+                max="24"
+              />
+            </div>
+          </div>
 
-    <label>Weak Topics</label>
-    <textarea id="weak_topics" placeholder="Integration, Thermodynamics"></textarea>
+          <div class="form-group">
+            <label for="weak_topics">❌ Weak Topics</label>
+            <textarea
+              id="weak_topics"
+              placeholder="e.g., Integration, Thermodynamics..."
+            ></textarea>
+          </div>
+        </div>
 
-    <button onclick="generatePlan()">Generate Study Plan</button>
+        <div class="button-group">
+          <button onclick="generatePlan()">Generate Plan</button>
+          <button class="clear-btn" onclick="clearForm()">Clear</button>
+        </div>
+      </div>
 
-    <div id="loading" class="loading" style="display:none;">
-      Generating your study plan...
+      <!-- Right Panel: Single Output Box -->
+      <div class="output-grid">
+        <h2>📋 Your Study Plan</h2>
+        <div class="output-content" id="outputContent">
+          <div class="empty-state">
+            ✨ Click "Generate Plan" to create your personalized study schedule
+          </div>
+        </div>
+      </div>
     </div>
-
-    <div id="output" class="output" style="display:none;"></div>
   </div>
 
   <script>
+    function extractTableFromText(text) {
+      // Find table-like content (lines with | separators)
+      const lines = text.split('\n');
+      const tableLines = [];
+      let inTable = false;
+      let tableStart = -1;
+      
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes('|')) {
+          if (!inTable) {
+            inTable = true;
+            tableStart = i;
+          }
+          tableLines.push(i);
+        } else if (inTable && lines[i].trim() === '') {
+          inTable = false;
+        }
+      }
+      
+      if (tableLines.length > 0) {
+        const tableText = tableLines.map(i => lines[i]).join('\n');
+        const remainingText = lines.filter((_, i) => !tableLines.includes(i)).join('\n');
+        return { table: tableText, remaining: remainingText };
+      }
+      
+      return { table: null, remaining: text };
+    }
+
+    function parseTable(tableText) {
+      const lines = tableText.split('\n').filter(line => line.trim());
+      if (lines.length < 2) return '';
+      
+      let html = '<table><thead><tr>';
+      
+      // Parse header
+      const headerCells = lines[0].split('|').filter(cell => cell.trim());
+      headerCells.forEach(cell => {
+        html += `<th>${cell.trim()}</th>`;
+      });
+      html += '</tr></thead><tbody>';
+      
+      // Parse body (skip separator line)
+      for (let i = 2; i < lines.length; i++) {
+        const cells = lines[i].split('|').filter(cell => cell.trim());
+        if (cells.length > 0) {
+          const isRevision = lines[i].toLowerCase().includes('revision');
+          const rowClass = isRevision ? 'revision-slot' : 'study-slot';
+          html += `<tr class="${rowClass}">`;
+          cells.forEach(cell => {
+            html += `<td>${cell.trim()}</td>`;
+          });
+          html += '</tr>';
+        }
+      }
+      
+      html += '</tbody></table>';
+      return html;
+    }
+
+    function parseMarkdown(text) {
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/__(.*?)__/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/_(.*?)_/g, '<em>$1</em>')
+        .replace(/^### (.*?)$/gm, '<h4 style="margin-top: 15px; margin-bottom: 10px; color: #00d4ff; font-weight: 700;">$1</h4>')
+        .replace(/^## (.*?)$/gm, '<h3 style="margin-top: 15px; margin-bottom: 10px; color: #00d4ff; font-weight: 700;">$1</h3>')
+        .replace(/^# (.*?)$/gm, '<h2 style="margin-top: 15px; margin-bottom: 10px; color: #00d4ff; font-weight: 700;">$1</h2>')
+        .replace(/\n/g, '<br>');
+    }
+
+    function clearForm() {
+      document.getElementById("subjects").value = "";
+      document.getElementById("exam_date").value = "";
+      document.getElementById("hours_per_day").value = "";
+      document.getElementById("weak_topics").value = "";
+    }
+
     async function generatePlan() {
       const subjects = document.getElementById("subjects").value;
       const exam_date = document.getElementById("exam_date").value;
       const hours_per_day = document.getElementById("hours_per_day").value;
       const weak_topics = document.getElementById("weak_topics").value;
 
-      document.getElementById("output").style.display = "none";
-      document.getElementById("loading").style.display = "block";
+      if (!subjects || !exam_date || !hours_per_day || !weak_topics) {
+        showError("❌ Please fill in all fields");
+        return;
+      }
+
+      const outputContent = document.getElementById("outputContent");
+      outputContent.innerHTML = '<div class="loading">⏳ Generating your study plan...</div>';
+
+      const controller = new AbortController();
+      const timeoutMs = 30000; // 30s timeout
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       try {
-        // 🔥 FIX: use relative path via Colab proxy
-        const response = await fetch("/generate-plan", {
+        const response = await fetch("http://localhost:8000/generate-plan", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             subjects,
             exam_date,
             hours_per_day: Number(hours_per_day),
-            weak_topics
-          })
+            weak_topics,
+          }),
+          signal: controller.signal,
         });
 
-        const data = await response.json();
+        if (!response.ok) {
+          const text = await response.text().catch(() => "");
+          showError(`❌ Server error: ${response.status} ${response.statusText} ${text}`);
+          return;
+        }
 
-        document.getElementById("loading").style.display = "none";
-        document.getElementById("output").style.display = "block";
-        document.getElementById("output").innerText = data.plan || data.error;
+        let data;
+        try {
+          data = await response.json();
+        } catch (e) {
+          const text = await response.text().catch(() => "");
+          showError(`❌ Invalid JSON response: ${text}`);
+          return;
+        }
+
+        if (data.error) {
+          showError(data.error);
+          return;
+        }
+
+        const planText = data.plan || JSON.stringify(data) || "No response received";
+        const formattedText = parseMarkdown(planText);
+        outputContent.innerHTML = '<div class="output-text">' + formattedText + '</div>';
 
       } catch (err) {
-        document.getElementById("loading").style.display = "none";
-        document.getElementById("output").style.display = "block";
-        document.getElementById("output").innerText = "❌ Failed to connect to backend.";
+        if (err.name === 'AbortError') {
+          showError('❌ Request timed out. The server may be busy. Try again.');
+        } else {
+          showError('❌ Failed to connect to backend. Make sure it is running on localhost:8000');
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
+
+    function showError(message) {
+      const outputContent = document.getElementById("outputContent");
+      outputContent.innerHTML = '<div class="error">' + message + '</div>';
+    }
+
+    // Set default exam date to next month
+    document.addEventListener("DOMContentLoaded", function() {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 30);
+      document.getElementById("exam_date").valueAsDate = tomorrow;
+    });
+
+    // Animated Starfield Background
+    const canvas = document.getElementById('starCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const stars = [];
+    const numStars = 150;
+    
+    class Star {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.z = Math.random() * 100;
+        this.radius = Math.random() * 1.5;
+        this.opacity = Math.random() * 0.5 + 0.3;
+        this.twinkleSpeed = Math.random() * 0.03 + 0.01;
+        this.twinkleAmount = Math.sin(Date.now() * this.twinkleSpeed) * 0.5 + 0.5;
+      }
+      
+      update() {
+        this.z -= 0.5;
+        if (this.z <= 0) {
+          this.z = 100;
+        }
+        this.twinkleAmount = Math.sin(Date.now() * this.twinkleSpeed) * 0.5 + 0.5;
+      }
+      
+      draw() {
+        const scale = this.z / 100;
+        const x = (this.x - canvas.width / 2) * scale + canvas.width / 2;
+        const y = (this.y - canvas.height / 2) * scale + canvas.height / 2;
+        const size = this.radius * (1 - this.z / 100) * 2;
+        
+        // Twinkling effect
+        ctx.globalAlpha = this.opacity * this.twinkleAmount;
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Glow effect for stars closer to camera
+        if (scale > 0.7) {
+          ctx.globalAlpha = (this.opacity * this.twinkleAmount) * 0.5;
+          ctx.fillStyle = '#00d4ff';
+          ctx.beginPath();
+          ctx.arc(x, y, size * 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        ctx.globalAlpha = 1;
+      }
+    }
+    
+    // Initialize stars
+    for (let i = 0; i < numStars; i++) {
+      stars.push(new Star());
+    }
+    
+    function animateStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw dark background
+      ctx.fillStyle = '#0a0e1a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Update and draw stars
+      stars.forEach(star => {
+        star.update();
+        star.draw();
+      });
+      
+      requestAnimationFrame(animateStars);
+    }
+    
+    animateStars();
+    
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
   </script>
 </body>
 </html>
